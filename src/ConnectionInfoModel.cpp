@@ -1,4 +1,5 @@
 #include <vector>
+#include <QColor>
 
 #include "ConnectionInfoModel.h"
 #include "CurlWorker.h"
@@ -44,6 +45,15 @@ QVariant ConnectionInfoModel::data(const QModelIndex &index, int role) const {
     default:
       return QVariant();
     }
+  }
+
+  if (role == Qt::BackgroundColorRole) {
+    if (!lst_infos[index.row()].ir) return QVariant();
+    double coeff = lst_infos[index.row()].ir->timeout_ms / 1000.0;
+    int r = (int)(coeff * lst_infos[index.row()].time_total);
+    if (r > 255) r = 255;
+    int g = 255 - r;
+    return QColor(r, g, 0);
   }
 
   if (role == Qt::TextAlignmentRole) {
