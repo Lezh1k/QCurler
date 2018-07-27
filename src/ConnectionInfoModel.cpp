@@ -49,7 +49,7 @@ QVariant ConnectionInfoModel::data(const QModelIndex &index, int role) const {
 
   if (role == Qt::BackgroundColorRole) {
     if (!lst_infos[index.row()].ir) return QVariant();
-    double coeff = lst_infos[index.row()].ir->timeout_ms / 1000.0;
+    double coeff = 255000.0 / lst_infos[index.row()].ir->timeout_ms;
     int r = (int)(coeff * lst_infos[index.row()].time_total);
     if (r > 255) r = 255;
     int g = 255 - r;
