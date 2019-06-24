@@ -19,6 +19,10 @@ CurlWorker::~CurlWorker() {
 }
 ///////////////////////////////////////////////////////
 
+size_t noop_cb(void *ptr, size_t size, size_t nmemb, void *data) {
+  return size * nmemb;
+}
+
 int CurlWorker::multi_request(std::vector<internet_resource_t>& lst) {
   CURLM *cm;
   CURLMsg *msg;
@@ -42,6 +46,8 @@ int CurlWorker::multi_request(std::vector<internet_resource_t>& lst) {
     add_ir_to_multi(tir, cm);
 
   curl_multi_setopt(cm, CURLMOPT_MAXCONNECTS, lst.size());
+
+  //curl_easy_setopt(cm, CURLOPT_WRITEFUNCTION, noop_cb);
 
   while(m_isRunning) {
     curl_multi_perform(cm, &running_handlers);
@@ -89,6 +95,7 @@ int CurlWorker::multi_request(std::vector<internet_resource_t>& lst) {
       curl_multi_remove_handle(cm, msg->easy_handle);
       curl_multi_add_handle(cm, msg->easy_handle); //make loop infinite
     } //while (msg!=NULL)
+    thread()->usleep(200 * 1000);
   } //while(is_running)
 
 
@@ -155,7 +162,7 @@ void CurlWorker::emit_internet_resource_info(CURLMsg *msg) {
       info.url = info.ir->url;
     }
 
-    res = curl_easy_getinfo(hCurl, CURLINFO_SIZE_DOWNLOAD_T, &info.download_size);
+    res = curl_easy_getinfo(hCurl, CURLINFO_SIZE_DOWNLOAD, &info.download_size);
     if (res != CURLE_OK || info.download_size <= 0) {
       //todo log
     }
@@ -167,7 +174,7 @@ void CurlWorker::emit_internet_resource_info(CURLMsg *msg) {
     }
 
     /* check for average download speed */
-    res = curl_easy_getinfo(hCurl, CURLINFO_SPEED_DOWNLOAD_T, &info.download_speed);
+    res = curl_easy_getinfo(hCurl, CURLINFO_SPEED_DOWNLOAD, &info.download_speed);
     if((CURLE_OK != res) || (info.download_speed<=0)) {
       //todo log
     }

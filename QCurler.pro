@@ -40,3 +40,6 @@ FORMS += \
         forms/mainwindow.ui
 
 LIBS += -lcurl
+
+target.path = /home/pi/qcurler/qcurler
+INSTALLS += target

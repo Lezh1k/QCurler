@@ -1,5 +1,6 @@
 #include <QThread>
 #include <QPushButton>
+#include <QTimer>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -13,7 +14,7 @@ MainWindow::MainWindow(QWidget *parent) :
   m_model(NULL)
 {
   ui->setupUi(this);
-  connect(ui->btn_start_stop, &QPushButton::released, this, &MainWindow::btn_start_stop_released);
+  //connect(ui->btn_start_stop, &QPushButton::released, this, &MainWindow::btn_start_stop_released);
   m_model = new ConnectionInfoModel(this);
   ui->tv_statistics->setModel(m_model);
 
@@ -24,6 +25,13 @@ MainWindow::MainWindow(QWidget *parent) :
   for (int c = 0; c < ui->tv_statistics->verticalHeader()->count(); ++c) {
     ui->tv_statistics->verticalHeader()->setSectionResizeMode(c, QHeaderView::Stretch);
   }
+
+  start_new_curl_worker();
+  QTimer *m_repaintTimer = new QTimer();
+  connect(m_repaintTimer, &QTimer::timeout, [=]() {
+      update();
+  });
+  m_repaintTimer->start(1000);
 }
 
 MainWindow::~MainWindow() {
@@ -45,14 +53,14 @@ void MainWindow::start_new_curl_worker() {
   m_cw->moveToThread(th);
   th->start();
   m_curl_worker_running = true;
-  ui->btn_start_stop->setText("Stop");
+  //ui->btn_start_stop->setText("Stop");
 }
 ///////////////////////////////////////////////////////////
 
 void MainWindow::stop_curl_worker() {
   m_cw->Stop();
   m_curl_worker_running = false;
-  ui->btn_start_stop->setText("Start");
+  //ui->btn_start_stop->setText("Start");
 }
 ///////////////////////////////////////////////////////////
 
