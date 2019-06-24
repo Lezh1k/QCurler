@@ -27,9 +27,6 @@ private:
 
   void start_new_curl_worker();
   void stop_curl_worker();
-
-private slots:
-  void btn_start_stop_released();
 };
 
 #endif // MAINWINDOW_H

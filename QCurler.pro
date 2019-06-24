@@ -43,3 +43,6 @@ LIBS += -lcurl
 
 target.path = /home/pi/qcurler/qcurler
 INSTALLS += target
+
+RESOURCES += \
+    icons.qrc

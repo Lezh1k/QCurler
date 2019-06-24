@@ -6,11 +6,11 @@
 #include "Commons.h"
 
 static std::vector<QString> lst_headers = {
-  "URL", "Time", "Size", "Speed"
+  "URL", "Time", "Speed"
 };
 
 ConnectionInfoModel::ConnectionInfoModel(QObject *parent) : QAbstractTableModel(parent),
-  lst_infos(CurlWorker::LstResources().size()) {
+  m_lst_infos(CurlWorker::LstResources().size()) {
 
 }
 
@@ -32,33 +32,48 @@ int ConnectionInfoModel::columnCount(const QModelIndex &parent) const {
 ///////////////////////////////////////////////////////////
 
 QVariant ConnectionInfoModel::data(const QModelIndex &index, int role) const {
-  if (role == Qt::DisplayRole) {
-    switch (index.column()) {
-    case 0:
-      return lst_infos[index.row()].url;
-    case 1:
-      return lst_infos[index.row()].time_total;
-    case 2:
-      return QVariant::fromValue<long>(lst_infos[index.row()].download_size);
-    case 3:
-      return QVariant::fromValue<double>(lst_infos[index.row()].download_speed / 1024.0);
-    default:
+
+  if (role == Qt::DecorationRole) {
+    if (index.column() != 0)
       return QVariant();
-    }
+
+    if (!m_lst_infos[index.row()].ir)
+      return QVariant();
+
+    QPixmap pm = QPixmap(m_lst_infos[index.row()].ir->img_path);
+    if (pm.isNull())
+      return QVariant();
+    return pm.scaled(m_row_height, m_row_height, Qt::KeepAspectRatio);
+  }
+
+  if (role == Qt::DisplayRole) {
+//    QPixmap pm = QPixmap(lst_infos[index.row()].
+    if (index.column() == 0)
+      return m_lst_infos[index.row()].url;
+    if (index.column() == 1)
+      return m_lst_infos[index.row()].time_total;
+    if (index.column() == 2)
+      return QVariant::fromValue<QString>(QString("%1 kB/sec").arg(m_lst_infos[index.row()].download_speed / 1024.0));
+    return QVariant();
   }
 
   if (role == Qt::BackgroundColorRole) {
-    if (!lst_infos[index.row()].ir) return QVariant();
-    double coeff = 255000.0 / lst_infos[index.row()].ir->timeout_ms;
-    int r = (int)(coeff * lst_infos[index.row()].time_total);
-    if (r > 255) r = 255;
-    int g = 255 - r;
+    if (!m_lst_infos[index.row()].ir)
+      return QVariant();
+    if (index.column() == 0)
+      return QVariant();
+
+    double coeff = 255000.0 / m_lst_infos[index.row()].ir->timeout_ms;
+    int r = (int)(coeff * m_lst_infos[index.row()].time_total);
+    if (r > 0xff) r = 0xff;
+    int g = 0xff - r;
     return QColor(r, g, 0);
   }
 
   if (role == Qt::TextAlignmentRole) {
     return Qt::AlignCenter;
   }
+
   return QVariant();
 }
 
@@ -75,9 +90,9 @@ QVariant ConnectionInfoModel::headerData(int section, Qt::Orientation orientatio
 }
 ///////////////////////////////////////////////////////////
 
-void ConnectionInfoModel::info_received(internet_resource_info_t info) {
+void ConnectionInfoModel::info_received(internet_resource_info info) {
   if (info.ir) {
-    lst_infos[info.ir->ix] = info;
+    m_lst_infos[info.ir->ix] = info;
   }
   this->endResetModel();
 }

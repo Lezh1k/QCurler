@@ -9,7 +9,9 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  qRegisterMetaType<internet_resource_info_t>("internet_resource_info_t");
+  qRegisterMetaType<internet_resource_info>("internet_resource_info");
+
+  QPixmap pm = QPixmap(":/ico/images/vk.png");
 
   MainWindow w;
   w.show();

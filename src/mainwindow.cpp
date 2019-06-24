@@ -6,15 +6,16 @@
 #include "ui_mainwindow.h"
 #include "ConnectionInfoModel.h"
 
+#include <QDebug>
+
 MainWindow::MainWindow(QWidget *parent) :
   QMainWindow(parent),
   ui(new Ui::MainWindow),
   m_curl_worker_running(false),
-  m_cw(NULL),
-  m_model(NULL)
+  m_cw(nullptr),
+  m_model(nullptr)
 {
-  ui->setupUi(this);
-  //connect(ui->btn_start_stop, &QPushButton::released, this, &MainWindow::btn_start_stop_released);
+  ui->setupUi(this);  
   m_model = new ConnectionInfoModel(this);
   ui->tv_statistics->setModel(m_model);
 
@@ -27,15 +28,19 @@ MainWindow::MainWindow(QWidget *parent) :
   }
 
   start_new_curl_worker();
-  QTimer *m_repaintTimer = new QTimer();
+  QTimer *m_repaintTimer = new QTimer(this);
   connect(m_repaintTimer, &QTimer::timeout, [=]() {
-      update();
+    m_model->setRowHeight(ui->tv_statistics->rowHeight(0));
+    update();
   });
   m_repaintTimer->start(1000);
+
+
 }
 
 MainWindow::~MainWindow() {
   if (m_model) delete m_model;
+  if (m_cw) m_cw->Stop();
   delete ui;
 }
 ///////////////////////////////////////////////////////////
@@ -52,23 +57,12 @@ void MainWindow::start_new_curl_worker() {
 
   m_cw->moveToThread(th);
   th->start();
-  m_curl_worker_running = true;
-  //ui->btn_start_stop->setText("Stop");
+  m_curl_worker_running = true;  
 }
 ///////////////////////////////////////////////////////////
 
 void MainWindow::stop_curl_worker() {
   m_cw->Stop();
   m_curl_worker_running = false;
-  //ui->btn_start_stop->setText("Start");
-}
-///////////////////////////////////////////////////////////
-
-void MainWindow::btn_start_stop_released() {
-  if (m_curl_worker_running) {
-    stop_curl_worker();
-    return;
-  }
-  start_new_curl_worker();
 }
 ///////////////////////////////////////////////////////////
