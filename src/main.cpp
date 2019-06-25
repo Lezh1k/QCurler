@@ -11,8 +11,6 @@ int main(int argc, char *argv[]) {
 
   qRegisterMetaType<internet_resource_info>("internet_resource_info");
 
-  QPixmap pm = QPixmap(":/ico/images/vk.png");
-
   MainWindow w;
   w.show();
   int mr = a.exec();
