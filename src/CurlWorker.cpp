@@ -1,18 +1,9 @@
 #include "CurlWorker.h"
 #include <QThread>
 #include <assert.h>
+#include "Commons.h"
 
-static const int def_timeout = 5000;
-static std::vector<internet_resource> lst_resources = {
-  internet_resource("https://www.vk.com", ":/ico/images/vk.png", def_timeout, false, false, 0),
-  internet_resource("https://www.facebook.com", ":/ico/images/facebook.png", def_timeout, false, false, 1),
-  internet_resource("https://www.instagram.com", ":/ico/images/instagram.png", def_timeout, false, false, 2),
-  internet_resource("https://www.diesel.elcat.kg", ":/ico/images/diesel.png", def_timeout, true, true, 3),
-  internet_resource("https://www.youtube.com", ":/ico/images/youtube.png", def_timeout, false, false, 4),
-  internet_resource("https://www.google.com", ":/ico/images/google.png", def_timeout, false, false, 5),
-};
-
-CurlWorker::CurlWorker() {
+CurlWorker::CurlWorker(IResourceProvider *prov) : m_provider(prov) {  
 }
 ///////////////////////////////////////////////////////
 
@@ -29,7 +20,7 @@ static size_t write_cb(void *ptr,
   return size * nmemb;
 }
 
-int CurlWorker::multi_request(std::vector<internet_resource>& lst) {
+int CurlWorker::multiRequest(const std::vector<InternetResource>& lst_resources) {
   CURLM *cm = nullptr;
   CURLMsg *msg = nullptr;
   int32_t qmsg;
@@ -40,7 +31,7 @@ int CurlWorker::multi_request(std::vector<internet_resource>& lst) {
   fd_set fds_read, fds_write, fds_exc;
   struct timeval t;
   long timeout;
-  uint32_t resources_count = static_cast<uint32_t>(lst.size());
+  uint32_t resources_count = static_cast<uint32_t>(lst_resources.size());
 
   cm = curl_multi_init();
   if (cm == nullptr) {
@@ -48,10 +39,22 @@ int CurlWorker::multi_request(std::vector<internet_resource>& lst) {
     return -1;
   }
 
-  for (auto tir = lst.begin(); tir != lst.end(); ++tir)
-    add_ir_to_multi(tir, cm);
+  std::vector<CURL*> lst_h;
+  lst_h.reserve(lst_resources.size());
 
-  curl_multi_setopt(cm, CURLMOPT_MAXCONNECTS, lst.size());  
+  for (auto tir : lst_resources) {
+    CURL* h = addInternetResourceToCURLM(tir, cm);
+    if (h == nullptr) continue;
+
+    CURLMcode mres = curl_multi_add_handle(cm, h);
+    if (mres != CURLM_OK) {
+      curl_easy_cleanup(h);
+      continue;
+    }
+    lst_h.push_back(h);
+  }
+
+  curl_multi_setopt(cm, CURLMOPT_MAXCONNECTS, lst_h.size());
 
   while(resources_count) {
     curl_multi_perform(cm, &running_handlers);
@@ -63,14 +66,14 @@ int CurlWorker::multi_request(std::vector<internet_resource>& lst) {
       curl_ec = curl_multi_fdset(cm, &fds_read, &fds_write, &fds_exc, &max_fd);
 
       if (curl_ec != CURLM_OK) {
-        return -1; //todo handle this
+        break;
       }
 
       if(curl_multi_timeout(cm, &timeout)) {
-        return -2; //todo handle
+        break;
       }
 
-      if(timeout == -1)
+      if(timeout < 0)
         timeout = 1000;
 
       if (max_fd == -1) {
@@ -83,7 +86,7 @@ int CurlWorker::multi_request(std::vector<internet_resource>& lst) {
         res = select(max_fd+1, &fds_read, &fds_write, &fds_exc, &t);
 
         if (res < 0) {
-          return -3;
+          break;
         }
       } //if max_fd!=-1
     } //if running_handlers
@@ -100,65 +103,59 @@ int CurlWorker::multi_request(std::vector<internet_resource>& lst) {
     } //while (msg!=NULL)
   } //while(resources_count)
 
-  for (auto tir = lst.begin(); tir != lst.end(); ++tir) {
-    if (!tir->hCurl) continue;
-    curl_easy_cleanup(tir->hCurl);
-  }
-
+  std::for_each(lst_h.begin(), lst_h.end(), [&](CURL* h) {curl_easy_cleanup(h);});
   curl_multi_cleanup(cm);
   return 0;
 }
+///////////////////////////////////////////////////////
 
-int CurlWorker::add_ir_to_multi(std::vector<internet_resource>::iterator ir, CURLM *cm) {
-  ir->hCurl = curl_easy_init();
-  if (!ir->hCurl) {
+CURL* CurlWorker::addInternetResourceToCURLM(const InternetResource &ir, CURLM *cm) {
+  CURL* hCurl = curl_easy_init();
+  if (!hCurl) {
     fprintf(stderr, "curl_easy_init() failed");
-    return 1;
+    return nullptr;
   }
 
-  curl_easy_setopt(ir->hCurl, CURLOPT_URL, ir->url);
-  curl_easy_setopt(ir->hCurl, CURLOPT_TIMEOUT_MS, ir->timeout_ms);
-  curl_easy_setopt(ir->hCurl, CURLOPT_FOLLOWLOCATION, 1L);
-  curl_easy_setopt(ir->hCurl, CURLOPT_POSTREDIR, CURL_REDIR_POST_ALL);
-  curl_easy_setopt(ir->hCurl, CURLOPT_WRITEFUNCTION, write_cb);
+  curl_easy_setopt(hCurl, CURLOPT_URL, ir.url);
+  curl_easy_setopt(hCurl, CURLOPT_TIMEOUT_MS, ir.timeout_ms);
+  curl_easy_setopt(hCurl, CURLOPT_FOLLOWLOCATION, 1L);
+  curl_easy_setopt(hCurl, CURLOPT_POSTREDIR, CURL_REDIR_POST_ALL);
+  curl_easy_setopt(hCurl, CURLOPT_WRITEFUNCTION, write_cb);
 
-  if (ir->ua)
-    curl_easy_setopt(ir->hCurl, CURLOPT_USERAGENT, ir->ua);
+  if (ir.ua)
+    curl_easy_setopt(hCurl, CURLOPT_USERAGENT, ir.ua);
 
 #ifdef VERBOSE
-  curl_easy_setopt(ir->hCurl, CURLOPT_VERBOSE, 1L);
+  curl_easy_setopt(hCurl, CURLOPT_VERBOSE, 1L);
 #endif
 
-  if (ir->skip_peer_verification)
-    curl_easy_setopt(ir->hCurl, CURLOPT_SSL_VERIFYPEER, 0L);
-  if (ir->skip_hostname_verification)
-    curl_easy_setopt(ir->hCurl, CURLOPT_SSL_VERIFYHOST, 0L);
-  curl_easy_setopt(ir->hCurl, CURLOPT_PRIVATE, ir);
-
-  CURLMcode mres = curl_multi_add_handle(cm, ir->hCurl);
-  if (mres != CURLM_OK) {
-    return 1;
-  }
-  return 0;
+  if (ir.skip_peer_verification)
+    curl_easy_setopt(hCurl, CURLOPT_SSL_VERIFYPEER, 0L);
+  if (ir.skip_hostname_verification)
+    curl_easy_setopt(hCurl, CURLOPT_SSL_VERIFYHOST, 0L);
+  curl_easy_setopt(hCurl, CURLOPT_PRIVATE, reinterpret_cast<void*>(ir.ix));
+  return hCurl;
 }
 ///////////////////////////////////////////////////////////
 
-void CurlWorker::emit_internet_resource_info(CURLMsg *msg) {
+void CurlWorker::emit_internet_resource_info(const CURLMsg *msg) {
   CURL *hCurl;
   CURLcode res;
-  internet_resource_info info;
+  InternetResourceInfo info;  
+  uintptr_t ix; //HACK!
 
-  if (msg->data.result != CURLE_OK) {
+  info.success = msg->data.result == CURLE_OK;
+  if (!info.success) {
     info.err_msg = curl_easy_strerror(msg->data.result);
   }
 
-  info.success = true;
   hCurl = msg->easy_handle;
-  res = curl_easy_getinfo(hCurl, CURLINFO_PRIVATE, static_cast<void*>(&info.ir));
-  if (res == CURLE_OK) {
-    info.url = info.ir->url;
-  }
+  res = curl_easy_getinfo(hCurl, CURLINFO_PRIVATE, &ix);
 
+  if (res != CURLE_OK || ix < 0 || ix >= m_provider->resources().size())
+    return; //do nothing
+
+  info.ir = m_provider->resources()[ix]; //still dangerous
   /* check for total download time */
   res = curl_easy_getinfo(hCurl, CURLINFO_TOTAL_TIME, &info.time_total);
   if(CURLE_OK != res) {
@@ -171,26 +168,27 @@ void CurlWorker::emit_internet_resource_info(CURLMsg *msg) {
     //todo log
   }
 
-  emit info_received(info);
+  emit infoReceived(info);
 }
 ///////////////////////////////////////////////////////
 
-const std::vector<internet_resource> &CurlWorker::LstResources() {
-  return lst_resources;
-}
-///////////////////////////////////////////////////////////
-
 void CurlWorker::Start() {  
   m_isRunning = true;
+  uint32_t counter = 0;
   while (m_isRunning) {
-    multi_request(lst_resources);
+    multiRequest(m_provider->resources());
+    if (counter++ != 10)
+      continue;
+    m_provider->update();
+    emit resourcesUpdated();
     QThread::currentThread()->usleep(200*1000);
+    counter = 0;
   }
 }
 ///////////////////////////////////////////////////////
 
 void CurlWorker::Stop() {
   m_isRunning = false;
-  emit Stopped();
+  emit stopped();
 }
 ///////////////////////////////////////////////////////
