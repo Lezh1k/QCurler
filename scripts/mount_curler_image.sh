@@ -2,7 +2,8 @@
 rootdir=/opt/image_mounts/curler.rpi;
 bootdir=$rootdir/curler.boot;
 fsdir=$rootdir/curler.fs;
-image=/media/raistlin/diske/storage/images/rpi.2019.curler.img;
+image=/home/lezh1k/PImages/rpi.2019.launchable.img;
+#image=/media/raistlin/diske/storage/images/rpi.2019.curler.img;
 #mkdir -p $bootdir;
 mkdir -p $fsdir;
 

@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include "CurlWorker.h"
+#include "IResourceProvider.h"
 
 namespace Ui {
   class MainWindow;
@@ -15,18 +16,18 @@ class MainWindow : public QMainWindow
   Q_OBJECT
 
 public:
-  explicit MainWindow(QWidget *parent = 0);
-  ~MainWindow();
+  explicit MainWindow(QWidget *parent = nullptr);
+  virtual ~MainWindow();
 
 private:
   Ui::MainWindow *ui;
 
-  bool m_curl_worker_running;
   CurlWorker *m_cw;
   ConnectionInfoModel *m_model;
+  IResourceProvider *m_resourcesProv;
+  QTimer *m_repaintTimer;
 
-  void start_new_curl_worker();
-  void stop_curl_worker();
+  void startNewCurlWorker();
 };
 
 #endif // MAINWINDOW_H

@@ -9,7 +9,7 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  qRegisterMetaType<internet_resource_info>("internet_resource_info");
+  qRegisterMetaType<InternetResourceInfo>("InternetResourceInfo");
 
   MainWindow w;
   w.show();

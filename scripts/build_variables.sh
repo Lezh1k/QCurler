@@ -1,6 +1,7 @@
 #!/bin/bash
 source ./cross_variables.sh
-export PATH_TO_CC=/opt/gcc-linaro-5.4.1-2017.05-x86_64_arm-linux-gnueabihf/bin
+export PATH_TO_CC=/home/lezh1k/gcc-linaro-5.4.1-2017.05-x86_64_arm-linux-gnueabihf/arm-linux-gnueabihf/bin
+#export PATH_TO_CC=/opt/gcc-linaro-5.4.1-2017.05-x86_64_arm-linux-gnueabihf/bin
 export PATH_TO_CC_TARGET=$PATH_TO_CC/arm-linux-gnueabihf-
 
 export CC=${PATH_TO_CC_TARGET}gcc

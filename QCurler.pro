@@ -25,12 +25,16 @@ DEFINES += QT_DEPRECATED_WARNINGS
 INCLUDEPATH += include
 
 SOURCES += \
+    src/Commons.cpp \
+    src/ResourceProviderHard.cpp \
         src/main.cpp \
         src/mainwindow.cpp \
     src/CurlWorker.cpp \
     src/ConnectionInfoModel.cpp
 
 HEADERS += \
+    include/IResourceProvider.h \
+    include/ResourceProviderHard.h \
     include/mainwindow.h \
     include/CurlWorker.h \
     include/ConnectionInfoModel.h \
