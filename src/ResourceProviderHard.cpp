@@ -14,8 +14,9 @@ ResourceProviderHard::ResourceProviderHard() {
 }
 
 void ResourceProviderHard::update() {
-  static int count = 1;
-  m_resources = std::vector<InternetResource>(all.begin(), all.begin() + count);
-  if (++count == static_cast<int>(all.size()))
-    count = 1;
+  /*uncomment for tests*/
+//  static int count = 1;
+//  m_resources = std::vector<InternetResource>(all.begin(), all.begin() + count);
+//  if (++count == static_cast<int>(all.size()))
+//    count = 1;
 }
