@@ -3,22 +3,15 @@
 #include <assert.h>
 #include "Commons.h"
 
-CurlWorker::CurlWorker(IResourceProvider *prov) : m_provider(prov) {  
-}
-///////////////////////////////////////////////////////
-
-CurlWorker::~CurlWorker() {  
-}
-///////////////////////////////////////////////////////
-
 static size_t write_cb(void *ptr,
-                      size_t size,
-                      size_t nmemb,
-                      void *data) {
+                       size_t size,
+                       size_t nmemb,
+                       void *data) {
   (void) ptr;
   (void) data;
   return size * nmemb;
 }
+///////////////////////////////////////////////////////
 
 int CurlWorker::multiRequest(const std::vector<InternetResource>& lst_resources) {
   CURLM *cm = nullptr;
@@ -43,7 +36,7 @@ int CurlWorker::multiRequest(const std::vector<InternetResource>& lst_resources)
   lst_h.reserve(lst_resources.size());
 
   for (auto tir : lst_resources) {
-    CURL* h = addInternetResourceToCURLM(tir, cm);
+    CURL* h = addInternetResourceToCURLM(tir);
     if (h == nullptr) continue;
 
     CURLMcode mres = curl_multi_add_handle(cm, h);
@@ -78,7 +71,7 @@ int CurlWorker::multiRequest(const std::vector<InternetResource>& lst_resources)
 
       if (max_fd == -1) {
         if (timeout) {
-          QThread::currentThread()->usleep(timeout*1000);
+          QThread::currentThread()->usleep(static_cast<unsigned long>(timeout)*1000);
         }
       } else {
         t.tv_sec = timeout/1000;
@@ -97,7 +90,7 @@ int CurlWorker::multiRequest(const std::vector<InternetResource>& lst_resources)
         continue;
       }
 
-      emit_internet_resource_info(msg);
+      emit_ir_info(msg);
       curl_multi_remove_handle(cm, msg->easy_handle);
       --resources_count;
     } //while (msg!=NULL)
@@ -109,7 +102,7 @@ int CurlWorker::multiRequest(const std::vector<InternetResource>& lst_resources)
 }
 ///////////////////////////////////////////////////////
 
-CURL* CurlWorker::addInternetResourceToCURLM(const InternetResource &ir, CURLM *cm) {
+CURL* CurlWorker::addInternetResourceToCURLM(const InternetResource &ir) {
   CURL* hCurl = curl_easy_init();
   if (!hCurl) {
     fprintf(stderr, "curl_easy_init() failed");
@@ -138,10 +131,10 @@ CURL* CurlWorker::addInternetResourceToCURLM(const InternetResource &ir, CURLM *
 }
 ///////////////////////////////////////////////////////////
 
-void CurlWorker::emit_internet_resource_info(const CURLMsg *msg) {
+void CurlWorker::emit_ir_info(const CURLMsg *msg) {
   CURL *hCurl;
   CURLcode res;
-  InternetResourceInfo info;  
+  InternetResourceInfo info;
   uintptr_t ix; //HACK!
 
   info.success = msg->data.result == CURLE_OK;
@@ -152,10 +145,10 @@ void CurlWorker::emit_internet_resource_info(const CURLMsg *msg) {
   hCurl = msg->easy_handle;
   res = curl_easy_getinfo(hCurl, CURLINFO_PRIVATE, &ix);
 
-  if (res != CURLE_OK || ix < 0 || ix >= m_provider->resources().size())
+  if (res != CURLE_OK || ix >= m_lstResources.size())
     return; //do nothing
 
-  info.ir = m_provider->resources()[ix]; //still dangerous
+  info.ir = m_lstResources[ix];
   /* check for total download time */
   res = curl_easy_getinfo(hCurl, CURLINFO_TOTAL_TIME, &info.time_total);
   if(CURLE_OK != res) {
@@ -172,23 +165,28 @@ void CurlWorker::emit_internet_resource_info(const CURLMsg *msg) {
 }
 ///////////////////////////////////////////////////////
 
-void CurlWorker::Start() {  
-  m_isRunning = true;
-  uint32_t counter = 0;
+void CurlWorker::run() {
   while (m_isRunning) {
-    multiRequest(m_provider->resources());
-    if (counter++ != 10)
-      continue;
-    m_provider->update();
-    emit resourcesUpdated();
-    QThread::currentThread()->usleep(200*1000);
-    counter = 0;
+    QThread::currentThread()->msleep(200UL);
+    MutexLocker lock(m_mut);
+    multiRequest(m_lstResources);
   }
+  emit stopped();
 }
 ///////////////////////////////////////////////////////
 
-void CurlWorker::Stop() {
+void CurlWorker::start() {  
+  m_isRunning = true;
+  run();
+}
+///////////////////////////////////////////////////////
+
+void CurlWorker::stop() {
   m_isRunning = false;
-  emit stopped();
+}
+
+void CurlWorker::updateResourceList(const std::vector<InternetResource> &lst) {
+  MutexLocker lock(m_mut);
+  m_lstResources = lst; //copy
 }
 ///////////////////////////////////////////////////////
