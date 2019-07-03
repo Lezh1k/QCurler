@@ -1,11 +1,9 @@
-#ifndef IRESOURCEPROVIDER_H
-#define IRESOURCEPROVIDER_H
+#ifndef INTERNETRESOURCE_H
+#define INTERNETRESOURCE_H
 
-#include <curl/curl.h>
-#include <curl/multi.h>
 #include <stdint.h>
 #include <QString>
-#include <vector>
+#include <curl/curl.h>
 
 struct InternetResource {
   const char *url;
@@ -28,12 +26,12 @@ struct InternetResource {
     ix(0xff){}
 
   InternetResource(const char *a_url,
-                    const char *a_img_path,
-                    const char *a_name,
-                    uint32_t a_timeout_ms,
-                    bool a_skip_peer_verification,
-                    bool a_skip_hostname_verification,
-                    uint8_t a_ix) :
+                   const char *a_img_path,
+                   const char *a_name,
+                   uint32_t a_timeout_ms,
+                   bool a_skip_peer_verification,
+                   bool a_skip_hostname_verification,
+                   uint8_t a_ix) :
     url(a_url),
     img_path(a_img_path),
     name(a_name),
@@ -43,7 +41,21 @@ struct InternetResource {
     skip_hostname_verification(a_skip_hostname_verification),
     ix(a_ix){
   }
+
+
+
+  bool operator==(const InternetResource& arg) {
+    if (this == &arg) return true;
+    return strcmp(this->url, arg.url) == 0;
+  }
 };
+
+inline bool operator==(const InternetResource& lhs, const InternetResource& rhs){
+  if (&lhs == &rhs) return true;
+  return strcmp(lhs.url, rhs.url) == 0 &&
+      strcmp(lhs.img_path, rhs.img_path) == 0;
+}
+inline bool operator!=(const InternetResource& lhs, const InternetResource& rhs){ return !(lhs == rhs); }
 ///////////////////////////////////////////////////////////
 
 struct InternetResourceInfo {
@@ -66,14 +78,5 @@ struct InternetResourceInfo {
 };
 ///////////////////////////////////////////////////////////
 
-class IResourceProvider {
-protected:
-  std::vector<InternetResource> m_resources;
-public:
-  IResourceProvider() = default;
-  virtual ~IResourceProvider() = default;
-  virtual void update(void) = 0;
-  const std::vector<InternetResource>& resources() const {return m_resources;}
-};
 
-#endif // IRESOURCEPROVIDER_H
+#endif // INTERNETRESOURCE_H

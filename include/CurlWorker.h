@@ -8,34 +8,37 @@
 #include <QPixmap>
 #include <QString>
 #include <mutex>
-#include "IResourceProvider.h"
+#include "ResourceProvider.h"
 
 class CurlWorker : public QObject {
   Q_OBJECT
 
 private:
   volatile bool m_isRunning;  
-  IResourceProvider *m_provider;  
+  std::mutex m_mut;
+  std::vector<InternetResource> m_lstResources;
 
   CurlWorker(const CurlWorker&); //prohibited
   CurlWorker& operator=(const CurlWorker&); //prohibited
 
   int multiRequest(const std::vector<InternetResource> &lst);
-  CURL *addInternetResourceToCURLM(const InternetResource &ir, CURLM *cm);
-  void emit_internet_resource_info(const CURLMsg *msg);
+  CURL *addInternetResourceToCURLM(const InternetResource &ir);
+  void emit_ir_info(const CURLMsg *msg);
+
+  void run();
 
 public:
-  CurlWorker(IResourceProvider *prov);
-  virtual ~CurlWorker();
-  void Stop();
+  CurlWorker() = default;
+  virtual ~CurlWorker() = default;
+  void stop();
+  void updateResourceList(const std::vector<InternetResource> &lst);
 
 signals:
   void stopped();
   void infoReceived(InternetResourceInfo info);
-  void resourcesUpdated();
 
 public slots:  
-  void Start();
+  void start();
 };
 
 #endif // CURLER_H

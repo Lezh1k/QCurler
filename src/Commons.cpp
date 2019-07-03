@@ -17,7 +17,7 @@ int FontMaxSize(const QFont &font,
     fm = QFontMetrics(tf);
 
     if (fm.height() > shape_h ||
-        fm.width(str) > shape_w) {
+        fm.horizontalAdvance(str) > shape_w) {
       l = m;
     } else {
       f = m+1;

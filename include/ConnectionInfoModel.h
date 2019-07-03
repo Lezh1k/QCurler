@@ -4,7 +4,6 @@
 #include <QAbstractTableModel>
 #include <QFont>
 #include "CurlWorker.h"
-#include "IResourceProvider.h"
 
 class ConnectionInfoModel : public QAbstractTableModel {
   Q_OBJECT
@@ -18,16 +17,14 @@ public:
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
   QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 
-  void setRowHeight(int32_t rh);
-  void setResourceProvider(IResourceProvider *prov);
+  void setImageSize(int32_t rh);
+  void resourceListUpdated(size_t size);
 
 private:
-  std::vector<InternetResourceInfo> m_lst_infos;
-  int32_t m_row_height;
-  IResourceProvider *m_prov;
+  std::vector<InternetResourceInfo> m_lstIRI;
+  int32_t m_imageSize;
 
 public slots:
-  void resourcesUpdated();
   void infoReceived(InternetResourceInfo info);
 };
 

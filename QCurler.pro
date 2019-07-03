@@ -26,15 +26,16 @@ INCLUDEPATH += include
 
 SOURCES += \
     src/Commons.cpp \
-    src/ResourceProviderHard.cpp \
+    src/ResourceProviderHardcodePolicy.cpp \
         src/main.cpp \
         src/mainwindow.cpp \
     src/CurlWorker.cpp \
     src/ConnectionInfoModel.cpp
 
 HEADERS += \
-    include/IResourceProvider.h \
-    include/ResourceProviderHard.h \
+    include/InternetResource.h \
+    include/ResourceProvider.h \
+    include/ResourceProviderHardcodePolicy.h \
     include/mainwindow.h \
     include/CurlWorker.h \
     include/ConnectionInfoModel.h \
