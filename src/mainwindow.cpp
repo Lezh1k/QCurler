@@ -26,13 +26,20 @@ MainWindow::MainWindow(QWidget *parent) :
   }
 
   for (int c = 0; c < ui->tv_statistics->verticalHeader()->count(); ++c) {
-    ui->tv_statistics->verticalHeader()->setSectionResizeMode(c, QHeaderView::Stretch);
+    ui->tv_statistics->verticalHeader()->setSectionResizeMode(c, QHeaderView::Fixed);
   }
 
   startNewCurlWorker();
   m_repaintTimer = new QTimer(this);
   connect(m_repaintTimer, &QTimer::timeout, [=]() {
-    m_model->setRowHeight(ui->tv_statistics->rowHeight(0));
+    int dh = ui->tv_statistics->height() - ui->tv_statistics->horizontalHeader()->height();
+//    dh -= m_model->rowCount(); //??
+    dh /= m_model->rowCount();
+    for (int i = 0; i < m_model->rowCount(); ++i)
+      ui->tv_statistics->verticalHeader()->resizeSection(i, dh);
+
+    int min = std::min(ui->tv_statistics->rowHeight(0), ui->tv_statistics->columnWidth(0));
+    m_model->setRowHeight(min);
     update();
   });
   m_repaintTimer->start(1000);
