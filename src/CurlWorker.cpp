@@ -24,7 +24,7 @@ int CurlWorker::multiRequest(const std::vector<InternetResource>& lst_resources)
   fd_set fds_read, fds_write, fds_exc;
   struct timeval t;
   long timeout;
-  uint32_t resources_count = static_cast<uint32_t>(lst_resources.size());
+  int32_t resources_count = static_cast<int32_t>(lst_resources.size());
 
   cm = curl_multi_init();
   if (cm == nullptr) {
@@ -49,7 +49,7 @@ int CurlWorker::multiRequest(const std::vector<InternetResource>& lst_resources)
 
   curl_multi_setopt(cm, CURLMOPT_MAXCONNECTS, lst_h.size());
 
-  while(resources_count) {
+  while(resources_count > 0) {
     curl_multi_perform(cm, &running_handlers);
 
     if (running_handlers) {

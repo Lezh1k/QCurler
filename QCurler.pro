@@ -27,8 +27,8 @@ INCLUDEPATH += include
 SOURCES += \
     src/Commons.cpp \
     src/ResourceProviderHardcodePolicy.cpp \
-        src/main.cpp \
-        src/mainwindow.cpp \
+    src/main.cpp \
+    src/mainwindow.cpp \
     src/CurlWorker.cpp \
     src/ConnectionInfoModel.cpp
 

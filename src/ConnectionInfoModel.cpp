@@ -31,10 +31,12 @@ int ConnectionInfoModel::columnCount(const QModelIndex &parent) const {
 ///////////////////////////////////////////////////////////
 
 QVariant ConnectionInfoModel::data(const QModelIndex &index, int role) const {
+  size_t ixrow = static_cast<size_t>(index.row());
+
   if (role == Qt::DecorationRole) {
     if (index.column() != 0)
       return QVariant();
-    QPixmap pm = QPixmap(m_lstIRI[index.row()].ir.img_path);
+    QPixmap pm = QPixmap(m_lstIRI[ixrow].ir.img_path);
     if (pm.isNull())
       return QVariant();
     return pm.scaled(m_imageSize, m_imageSize, Qt::KeepAspectRatio);
@@ -42,22 +44,22 @@ QVariant ConnectionInfoModel::data(const QModelIndex &index, int role) const {
 
   if (role == Qt::DisplayRole) {
     if (index.column() == 0)
-      return m_lstIRI[index.row()].ir.name;
+      return m_lstIRI[ixrow].ir.name;
     if (index.column() == 1)
-      return m_lstIRI[index.row()].time_total;
+      return m_lstIRI[ixrow].time_total;
     if (index.column() == 2)
-      return m_lstIRI[index.row()].speed_info();
+      return m_lstIRI[ixrow].speed_info();
     return QVariant();
   }
 
   if (role == Qt::BackgroundColorRole) {    
     if (index.column() == 0)
       return QVariant();
-    if (!m_lstIRI[index.row()].success)
+    if (!m_lstIRI[ixrow].success)
       return QColor(0xff, 0, 0);
 
-    double coeff = 255000.0 / m_lstIRI[index.row()].ir.timeout_ms;
-    int r = static_cast<int>(coeff * m_lstIRI[index.row()].time_total);
+    double coeff = 255000.0 / m_lstIRI[ixrow].ir.timeout_ms;
+    int r = static_cast<int>(coeff * m_lstIRI[ixrow].time_total);
     if (r > 0xff) r = 0xff;
     int g = 0xff - r;
     return QColor(r, g, 0);
@@ -75,7 +77,7 @@ QVariant ConnectionInfoModel::headerData(int section,
                                          int role) const {
   if (role == Qt::DisplayRole) {
     if (orientation == Qt::Horizontal) {
-      return lst_headers[section];
+      return lst_headers[static_cast<size_t>(section)];
     }
     if (orientation == Qt::Vertical) {
       return section+1;

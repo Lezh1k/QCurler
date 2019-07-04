@@ -9,7 +9,7 @@ public:
   ResourceProviderHardcodePolicy();
 
 protected:
-  ~ResourceProviderHardcodePolicy();
+  ~ResourceProviderHardcodePolicy(); //because we don't want vptr here.
   static std::vector<InternetResource> updateListOfResources();
 };
 

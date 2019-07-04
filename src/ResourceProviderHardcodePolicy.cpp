@@ -1,4 +1,3 @@
-
 #include "ResourceProviderHardcodePolicy.h"
 
 #define def_timeout 5000
