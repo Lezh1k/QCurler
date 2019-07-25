@@ -18,6 +18,7 @@ MainWindow::MainWindow(QWidget *parent) :
   ui->setupUi(this);
 
   m_model = new ConnectionInfoModel(this);
+  m_model->setFont(ui->tv_statistics->font());
   ui->tv_statistics->setModel(m_model);
 
   for (int c = 0; c < ui->tv_statistics->horizontalHeader()->count(); ++c) {
@@ -61,6 +62,8 @@ void MainWindow::repaintTimerTimeout() {
 
     int min = std::min(ui->tv_statistics->rowHeight(0), ui->tv_statistics->columnWidth(0));
     m_model->setImageSize(min);
+    m_model->setRowHeight(ui->tv_statistics->rowHeight(1));
+    m_model->setColWidth(ui->tv_statistics->columnWidth(1));
   }
 
   update();

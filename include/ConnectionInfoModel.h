@@ -18,11 +18,17 @@ public:
   QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 
   void setImageSize(int32_t rh);
+  void setRowHeight(int32_t rh);
+  void setColWidth(int32_t cw);
   void resourceListUpdated(size_t size);
+  void setFont(const QFont &font);
 
 private:
   std::vector<InternetResourceInfo> m_lstIRI;
   int32_t m_imageSize;
+  int32_t m_rowHeight;
+  int32_t m_colWidth;
+  QFont m_font;
 
 public slots:
   void infoReceived(InternetResourceInfo info);
