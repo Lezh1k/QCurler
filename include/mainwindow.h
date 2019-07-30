@@ -4,7 +4,9 @@
 #include <QMainWindow>
 #include "CurlWorker.h"
 #include "ResourceProvider.h"
+
 #include "ResourceProviderHardcodePolicy.h"
+#include "ResourceProviderNetworkServicePolicy.h"
 
 namespace Ui {
   class MainWindow;
@@ -20,7 +22,8 @@ private:
 
   CurlWorker *m_cw;
   ConnectionInfoModel *m_model;
-  ResourceProvider<ResourceProviderHardcodePolicy> m_resourcesProv;
+//  ResourceProvider<ResourceProviderHardcodePolicy> m_resourcesProv;
+  ResourceProvider<ResourceProviderNetworkServicePolicy> m_resourcesProv;
   QTimer *m_repaintTimer;
   QTimer *m_updateResourcesTimer;
 

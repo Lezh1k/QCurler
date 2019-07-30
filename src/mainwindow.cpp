@@ -60,10 +60,10 @@ void MainWindow::repaintTimerTimeout() {
     for (int i = 0; i < m_model->rowCount(); ++i)
       ui->tv_statistics->verticalHeader()->resizeSection(i, dh);
 
-    int min = std::min(ui->tv_statistics->rowHeight(0), ui->tv_statistics->columnWidth(0));
+    int min = std::min(ui->tv_statistics->rowHeight(0), ui->tv_statistics->columnWidth(0) / 3);
     m_model->setImageSize(min);
-    m_model->setRowHeight(ui->tv_statistics->rowHeight(1));
-    m_model->setColWidth(ui->tv_statistics->columnWidth(1));
+    m_model->setRowHeight(ui->tv_statistics->rowHeight(0));
+    m_model->setColWidth(ui->tv_statistics->columnWidth(0));
   }
 
   update();

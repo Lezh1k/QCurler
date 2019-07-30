@@ -6,21 +6,21 @@
 #include <curl/curl.h>
 
 struct InternetResource {
-  const char *url;
-  const char *img_path;
-  const char *name;
-  const char *ua; //user agent
+  QString url;
+  QString img_path;
+  QString name;
+  QString ua; //user agent
   uint32_t timeout_ms;
   bool skip_peer_verification;
   bool skip_hostname_verification;
   uint8_t ix;
 
   InternetResource() :
-    url(nullptr),
-    img_path(nullptr),
-    name(nullptr),
-    ua(nullptr),
-    timeout_ms(1),
+    url(""),
+    img_path(""),
+    name(""),
+    ua(""),
+    timeout_ms(3000),
     skip_peer_verification(false),
     skip_hostname_verification(false),
     ix(0xff){}
@@ -35,27 +35,26 @@ struct InternetResource {
     url(a_url),
     img_path(a_img_path),
     name(a_name),
-    ua(nullptr),
+    ua(""),
     timeout_ms(a_timeout_ms),
     skip_peer_verification(a_skip_peer_verification),
     skip_hostname_verification(a_skip_hostname_verification),
     ix(a_ix){
   }
 
-
-
   bool operator==(const InternetResource& arg) {
     if (this == &arg) return true;
-    return strcmp(this->url, arg.url) == 0;
+    return this->url == arg.url;
   }
 };
 
 inline bool operator==(const InternetResource& lhs, const InternetResource& rhs){
   if (&lhs == &rhs) return true;
-  return strcmp(lhs.url, rhs.url) == 0 &&
-      strcmp(lhs.img_path, rhs.img_path) == 0;
+  return lhs.url == rhs.url && lhs.img_path == rhs.img_path;
 }
-inline bool operator!=(const InternetResource& lhs, const InternetResource& rhs){ return !(lhs == rhs); }
+
+inline bool operator!=(const InternetResource& lhs,
+                       const InternetResource& rhs){ return !(lhs == rhs); }
 ///////////////////////////////////////////////////////////
 
 struct InternetResourceInfo {
@@ -77,6 +76,5 @@ struct InternetResourceInfo {
   }
 };
 ///////////////////////////////////////////////////////////
-
 
 #endif // INTERNETRESOURCE_H

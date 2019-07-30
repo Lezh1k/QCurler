@@ -109,14 +109,14 @@ CURL* CurlWorker::addInternetResourceToCURLM(const InternetResource &ir) {
     return nullptr;
   }
 
-  curl_easy_setopt(hCurl, CURLOPT_URL, ir.url);
+  curl_easy_setopt(hCurl, CURLOPT_URL, ir.url.toStdString().c_str());
   curl_easy_setopt(hCurl, CURLOPT_TIMEOUT_MS, ir.timeout_ms);
   curl_easy_setopt(hCurl, CURLOPT_FOLLOWLOCATION, 1L);
   curl_easy_setopt(hCurl, CURLOPT_POSTREDIR, CURL_REDIR_POST_ALL);
   curl_easy_setopt(hCurl, CURLOPT_WRITEFUNCTION, write_cb);
 
-  if (ir.ua)
-    curl_easy_setopt(hCurl, CURLOPT_USERAGENT, ir.ua);
+  if (!ir.ua.isEmpty())
+    curl_easy_setopt(hCurl, CURLOPT_USERAGENT, ir.ua.toStdString().c_str());
 
 #ifdef VERBOSE
   curl_easy_setopt(hCurl, CURLOPT_VERBOSE, 1L);

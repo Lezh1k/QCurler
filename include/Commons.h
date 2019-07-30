@@ -2,6 +2,7 @@
 #define COMMONS_H
 
 #include <mutex>
+#include <functional>
 #define UNUSED(x) ((void)x)
 
 class QFont;
@@ -19,6 +20,13 @@ struct MutexLocker {
     mut.lock();
   }
   ~MutexLocker() { mut.unlock();}
+};
+
+struct Defer {
+  std::function<void()> finalize;
+  Defer() = delete;
+  Defer(std::function<void()> &&fin) : finalize(fin) {}
+  ~Defer() { finalize(); }
 };
 
 #endif // COMMONS_H

@@ -1,0 +1,53 @@
+version: '3'
+
+services:
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+
+  front:
+    build:
+      context: ./
+      dockerfile: docker/Dockerfile
+    command: bash -c 'composer install --prefer-source --no-interaction && php artisan serve --host 0.0.0.0 --port 80'
+    environment:
+      - "VIRTUAL_HOST=resources.local"
+    working_dir: /var/www
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www
+      - vendor:/var/www/vendor
+    env_file: .env
+    links:
+      - mysql:mysql
+    depends_on:
+      - mysql
+
+  mysql:
+      image: mysql:5.7.18
+      command: --init-file /docker-entrypoint-initdb.d/dump.sql
+      environment:
+          - "MYSQL_ROOT_PASSWORD=RootPasswd"
+          - "MYSQL_DATABASE=kumtor_resources"
+          - "MYSQL_USER=root"
+          - "MYSQL_PASSWORD=RootPasswd"
+      ports:
+          - "3302:3306"
+      restart: always
+      volumes:
+        - ./docker/mysql-initdb:/docker-entrypoint-initdb.d
+        - dbdata:/var/lib/mysql
+      healthcheck:
+        test: ["CMD-SHELL", "mysql -uroot -pRootPasswd -e 'SHOW DATABASES' > /dev/null 2>&1 || exit 1"]
+        interval: 10s
+        timeout: 5s
+        retries: 60 
+
+volumes:
+  dbdata:
+  vendor:
+  ws_nodemodules:
