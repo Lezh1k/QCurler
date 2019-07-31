@@ -39,6 +39,7 @@ ResourceProviderNetworkServicePolicy::getReply(QNetworkAccessManager* nam,
   QNetworkReply* reply = nam->get(req);
   reply->ignoreSslErrors();
 
+
   QTimer* timer = new QTimer;
   timer->setInterval(10000);
   timer->setSingleShot(true);
@@ -75,9 +76,9 @@ ResourceProviderNetworkServicePolicy::preHandleReply(const QNetworkReply* reply,
 
 void
 ResourceProviderNetworkServicePolicy::updateListOfResourcesImpl() {
-  const QString str_url(QString("%1/api/resources").arg(url_management));
-  QUrl url_login(str_url);
-  QNetworkRequest request(url_login);
+  const QString urlStr(QString("%1/api/resources").arg(url_management));
+  QUrl urlUpdate(urlStr);
+  QNetworkRequest request(urlUpdate);
   request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
   QNetworkReply *reply = getReply(m_network_manager, request);
   reply->ignoreSslErrors();
@@ -141,6 +142,7 @@ ResourceProviderNetworkServicePolicy::downloadImgToTemp(const QString &imgUrlStr
   QUrl imgUrl(imgUrlStr);
   QNetworkRequest request(imgUrl);
   request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+  request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
   QNetworkReply *reply = getReply(m_network_manager, request);
 
   QObject::connect(reply, &QNetworkReply::finished, [reply, fullFilePath]() {

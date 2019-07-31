@@ -52,9 +52,9 @@ QVariant ConnectionInfoModel::data(const QModelIndex &index, int role) const {
     if (index.column() == col_url)
       return m_lstIRI[ixrow].ir.name;
     if (index.column() == col_time)
-      return m_lstIRI[ixrow].time_total;
+      return m_lstIRI[ixrow].time_total_str();
     if (index.column() == col_speed)
-      return m_lstIRI[ixrow].speed_info();
+      return m_lstIRI[ixrow].speed_info_str();
     return QVariant();
   }
 
@@ -67,13 +67,11 @@ QVariant ConnectionInfoModel::data(const QModelIndex &index, int role) const {
       txt = m_lstIRI[ixrow].ir.name;
       sw -= m_imageSize;
     } else if (index.column() == col_time) {
-      txt = QString("%1").arg(m_lstIRI[ixrow].time_total);
+      txt = m_lstIRI[ixrow].time_total_str();
     } else {
-      txt = m_lstIRI[ixrow].speed_info();
+      txt = m_lstIRI[ixrow].speed_info_str();
     }
-    int mfs = FontMaxSize(m_font, sw, sh, QString("%1W").arg(txt));
-    if (mfs == 0)
-      mfs = 1;
+    int mfs = FontMaxSize(m_font, sw, sh, QString("%1W").arg(txt));    
     f.setPointSize(mfs);
     return f;
   }

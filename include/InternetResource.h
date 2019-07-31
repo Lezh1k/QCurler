@@ -44,13 +44,13 @@ struct InternetResource {
 
   bool operator==(const InternetResource& arg) {
     if (this == &arg) return true;
-    return this->url == arg.url;
+    return this->url == arg.url && this->timeout_ms == arg.timeout_ms;
   }
 };
 
 inline bool operator==(const InternetResource& lhs, const InternetResource& rhs){
   if (&lhs == &rhs) return true;
-  return lhs.url == rhs.url && lhs.img_path == rhs.img_path;
+  return lhs.url == rhs.url && lhs.img_path == rhs.img_path && lhs.timeout_ms == rhs.timeout_ms;
 }
 
 inline bool operator!=(const InternetResource& lhs,
@@ -69,10 +69,14 @@ struct InternetResourceInfo {
     download_speed(0),
     success(false){}
 
-  QString speed_info(void) const {
+  QString speed_info_str(void) const {
     if (success)
-      return QString("%1 kB/sec").arg(download_speed / 1024.0);
+      return QString("%1 kB/sec").arg(QString::number(download_speed / 1024.0, 'f', 4));
     return QString(err_msg);
+  }
+
+  QString time_total_str(void) const {
+    return QString::number(time_total, 'f', 4);
   }
 };
 ///////////////////////////////////////////////////////////
