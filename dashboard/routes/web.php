@@ -18,3 +18,6 @@ Route::get('/', function () {
 Route::resource('resources', 'ResourcesController');
 Route::delete('/resources', 'ResourcesController@destroy');
 Route::put('/resources', 'ResourcesController@update');
+Auth::routes(['register'=>false]);
+
+Route::get('/home', 'HomeController@index');

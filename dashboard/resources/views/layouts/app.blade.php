@@ -8,8 +8,7 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>Dashboard</title>
-    {{--<title>{{ config('app.name', 'Dashboard') }}</title>--}}
+    <title>{{ config('app.name', 'Laravel') }}</title>
 
     <!-- Styles -->
     <link href="/css/app.css" rel="stylesheet">
@@ -37,7 +36,7 @@
 
                     <!-- Branding Image -->
                     <a class="navbar-brand" href="{{ url('/') }}">
-                        Dashboard
+                        {{ config('app.name', 'Laravel') }}
                     </a>
                 </div>
 
@@ -48,12 +47,11 @@
                     </ul>
 
                     <!-- Right Side Of Navbar -->
-{{--
                     <ul class="nav navbar-nav navbar-right">
                         <!-- Authentication Links -->
                         @if (Auth::guest())
                             <li><a href="{{ url('/login') }}">Login</a></li>
-                            <li><a href="{{ url('/register') }}">Register</a></li>
+                            {{--<li><a href="{{ url('/register') }}">Register</a></li>--}}
                         @else
                             <li class="dropdown">
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
@@ -76,20 +74,11 @@
                             </li>
                         @endif
                     </ul>
---}}
                 </div>
             </div>
         </nav>
-
         <div class="container">
-            @if (session('status'))
-                <div class="alert alert-success">
-                    {{ session('status') }}
-                </div>
-            @endif
-
-
-            @yield('content')
+        @yield('content')
         </div>
     </div>
 

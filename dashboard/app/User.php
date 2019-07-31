@@ -26,4 +26,14 @@ class User extends Authenticatable
     protected $hidden = [
         'password', 'remember_token',
     ];
+
+  public function createUser(array $details) : self
+  {
+    $user = new self();
+    $user->name = $details['name'];
+    $user->email = $details['email'];
+    $user->password = bcrypt($details['password']);
+    $user->save();
+    return $user;
+  }
 }
