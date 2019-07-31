@@ -6,7 +6,7 @@
 #include "Commons.h"
 
 static std::vector<QString> lst_headers = {
-  "URL", "Time", "Speed"
+  "URL", "Time (sec)", "Speed (kB/sec)"
 };
 
 enum columns {

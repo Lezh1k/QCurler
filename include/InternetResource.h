@@ -71,12 +71,12 @@ struct InternetResourceInfo {
 
   QString speed_info_str(void) const {
     if (success)
-      return QString("%1 kB/sec").arg(QString::number(download_speed / 1024.0, 'f', 4));
+      return QString::number(download_speed / 1024.0, 'f', 2);
     return QString(err_msg);
   }
 
   QString time_total_str(void) const {
-    return QString::number(time_total, 'f', 4);
+    return QString::number(time_total, 'f', 3);
   }
 };
 ///////////////////////////////////////////////////////////
