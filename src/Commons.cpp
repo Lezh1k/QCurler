@@ -9,7 +9,7 @@ int FontMaxSize(const QFont &font,
   QFont tf(font);
   QFontMetrics fm(font);
   int f, l, m;
-  l = 4096; f = 1;
+  l = 2048; f = 1;
 
   while (f < l) {
     m = (f+l) >> 1;

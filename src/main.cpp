@@ -1,7 +1,7 @@
 #include <QApplication>
 #include <curl/curl.h>
 #include "mainwindow.h"
-#include "CurlWorker.h"
+#include "ResourceChecker.h"
 
 int main(int argc, char *argv[]) {
 

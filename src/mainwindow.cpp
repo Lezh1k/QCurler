@@ -81,12 +81,12 @@ void MainWindow::updateResourcesTimerTimeout() {
 
 void MainWindow::startNewCurlWorker() {
   QThread *th = new QThread;
-  m_cw = new CurlWorker;
+  m_cw = new ResourceChecker;
 
-  connect(th, &QThread::started, m_cw, &CurlWorker::start);
-  connect(m_cw, &CurlWorker::infoReceived, m_model, &ConnectionInfoModel::infoReceived);
-  connect(m_cw, &CurlWorker::stopped, th, &QThread::quit);
-  connect(th, &QThread::finished, m_cw, &CurlWorker::deleteLater);
+  connect(th, &QThread::started, m_cw, &ResourceChecker::start);
+  connect(m_cw, &ResourceChecker::infoReceived, m_model, &ConnectionInfoModel::infoReceived);
+  connect(m_cw, &ResourceChecker::stopped, th, &QThread::quit);
+  connect(th, &QThread::finished, m_cw, &ResourceChecker::deleteLater);
   connect(th, &QThread::finished, th, &QThread::deleteLater);
 
   m_cw->moveToThread(th);

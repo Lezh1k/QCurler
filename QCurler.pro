@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui network
+QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -26,20 +26,20 @@ INCLUDEPATH += include
 
 SOURCES += \
     src/Commons.cpp \
+    src/ResourceChecker.cpp \
     src/ResourceProviderHardcodePolicy.cpp \
     src/ResourceProviderNetworkServicePolicy.cpp \
     src/main.cpp \
     src/mainwindow.cpp \
-    src/CurlWorker.cpp \
     src/ConnectionInfoModel.cpp
 
 HEADERS += \
     include/InternetResource.h \
+    include/ResourceChecker.h \
     include/ResourceProvider.h \
     include/ResourceProviderHardcodePolicy.h \
     include/ResourceProviderNetworkServicePolicy.h \
     include/mainwindow.h \
-    include/CurlWorker.h \
     include/ConnectionInfoModel.h \
     include/Commons.h
 
@@ -53,3 +53,6 @@ INSTALLS += target
 
 RESOURCES += \
     icons.qrc
+
+DISTFILES += \
+    url.cfg

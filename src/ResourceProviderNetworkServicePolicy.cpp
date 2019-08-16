@@ -1,25 +1,36 @@
-#include <QUrl>
-#include <QtNetwork/QNetworkRequest>
-#include <QtNetwork/QNetworkReply>
-#include <QTimer>
-#include <QObject>
-#include <QtNetwork/QNetworkAccessManager>
 #include <QString>
 #include <QCoreApplication>
 #include <QStandardPaths>
 #include <QDir>
-
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
-
 #include <algorithm>
+#include <QUrl>
 #include "Commons.h"
 #include "ResourceProviderNetworkServicePolicy.h"
 
-#include <QDebug>
-//!todo init this from some config.
-static QString url_management = "http://localhost:8000";
+ResourceProviderNetworkServicePolicy::ResourceProviderNetworkServicePolicy() :
+  m_url_management("http://192.168.20.128:8000") {
+
+  QString appDir = qApp->applicationDirPath();
+  static const QString urlFile = "url.cfg";
+  QString cfgPath = appDir + QDir::separator() + urlFile;
+  QFile cfgF(cfgPath);
+  do {
+    if (!cfgF.open(QFile::ReadOnly))
+      break;
+    QString tmp = cfgF.readAll();
+    QUrl turl;
+    if (turl.isEmpty() || !turl.isValid())
+      break;
+    m_url_management = tmp;
+  } while (0);
+}
+
+ResourceProviderNetworkServicePolicy::~ResourceProviderNetworkServicePolicy() {
+}
+///////////////////////////////////////////////////////
 
 ResourceProviderNetworkServicePolicy&
 ResourceProviderNetworkServicePolicy::Instance() {
@@ -28,94 +39,78 @@ ResourceProviderNetworkServicePolicy::Instance() {
 }
 ///////////////////////////////////////////////////////
 
-QNetworkReply*
-ResourceProviderNetworkServicePolicy::getReply(QNetworkAccessManager* nam,
-                                               QNetworkRequest& req) {
-  req.setAttribute(QNetworkRequest::CacheLoadControlAttribute,
-                   QNetworkRequest::AlwaysNetwork);
-  if (nam->networkAccessible() != QNetworkAccessManager::Accessible) {
-    nam->setNetworkAccessible(QNetworkAccessManager::Accessible);
-  }
-  QNetworkReply* reply = nam->get(req);
-  reply->ignoreSslErrors();
-
-
-  QTimer* timer = new QTimer;
-  timer->setInterval(10000);
-  timer->setSingleShot(true);
-  timer->start();
-
-  QObject::connect(timer, &QTimer::timeout, [reply]() {
-    if (reply) reply->close();
-  });
-  QObject::connect(reply, &QNetworkReply::finished, timer, &QTimer::stop);
-  QObject::connect(reply, &QNetworkReply::finished, timer, &QTimer::deleteLater);
-  QObject::connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
-  QObject::connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit,
-                   reply, &QNetworkReply::close);
-  return reply;
+size_t
+ResourceProviderNetworkServicePolicy::updateResWriteFunc(void *ptr,
+                                                         size_t size,
+                                                         size_t nmemb,
+                                                         std::string* data) {
+  data->append(static_cast<char*>(ptr), size * nmemb);
+  return size * nmemb;
 }
 ///////////////////////////////////////////////////////
 
-void
-ResourceProviderNetworkServicePolicy::preHandleReply(const QNetworkReply* reply,
-                                                     int& http_code,
-                                                     int& err_code,
-                                                     int& network_error) {
-  bool parsed = false;
-  http_code =
-      reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt(&parsed);
-  err_code = 0; //todo remove magic numbers
-  network_error = 0;
-  if (reply->error() != QNetworkReply::NoError) {
-    network_error = reply->error();
-    err_code = 1; //todo remove magic numbers
-  }
+size_t
+ResourceProviderNetworkServicePolicy::downloadImgWriteFunc(void *ptr,
+                                                           size_t size,
+                                                           size_t nmemb,
+                                                           void *stream) {
+  size_t written = std::fwrite(ptr, size, nmemb, static_cast<std::FILE*>(stream));
+  return written;
 }
 ///////////////////////////////////////////////////////
 
 void
 ResourceProviderNetworkServicePolicy::updateListOfResourcesImpl() {
-  const QString urlStr(QString("%1/api/resources").arg(url_management));
-  QUrl urlUpdate(urlStr);
-  QNetworkRequest request(urlUpdate);
-  request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-  QNetworkReply *reply = getReply(m_network_manager, request);
-  reply->ignoreSslErrors();
-  QObject::connect(reply, &QNetworkReply::finished,
-                   [reply, this]() {
-    if (reply == nullptr)
-      return;
+  const QString urlStr(QString("%1/api/resources").arg(m_url_management));
+  CURL *hCurl = curl_easy_init();
+  if (!hCurl) {
+    //!todo log
+    return;
+  }
+  Defer curlCleanup(std::bind([&hCurl](){curl_easy_cleanup(hCurl);}));
 
-    int http_code, err_code, network_error;
-    preHandleReply(reply, http_code, err_code, network_error);
+  curl_easy_setopt(hCurl, CURLOPT_URL, urlStr.toStdString().c_str());
+  curl_easy_setopt(hCurl, CURLOPT_NOPROGRESS, 1L);
+  curl_easy_setopt(hCurl, CURLOPT_USERAGENT, "curl/7.42.0");
+  curl_easy_setopt(hCurl, CURLOPT_MAXREDIRS, 50L);
+  curl_easy_setopt(hCurl, CURLOPT_TCP_KEEPALIVE, 1L);
 
-    if (err_code || network_error)
-      return; //!todo log!
+  std::string strResponse;
+  curl_easy_setopt(hCurl, CURLOPT_WRITEFUNCTION, updateResWriteFunc);
+  curl_easy_setopt(hCurl, CURLOPT_WRITEDATA, &strResponse);
 
-    QByteArray arr = reply->readAll();
-    QJsonDocument doc = QJsonDocument::fromJson(arr);
-    if (doc.isNull() || doc.isEmpty() || !doc.isArray()) {
-      //!todo log at least
-      return;
-    }
+  long rc;
+  curl_easy_getinfo(hCurl, CURLINFO_RESPONSE_CODE, &rc);
+  curl_easy_perform(hCurl);
 
-    QJsonArray jsonArr = doc.array();
-    std::vector<InternetResource> lstResources;
-    for (auto it : jsonArr) {
-      if (!it.isObject())
-        continue;
+  if (rc != CURLE_OK) {
+    //    qDebug() << rc;
+    return;
+  }
 
-      QJsonObject obj = it.toObject();
-      InternetResource ir;
-      if (!parseReply(obj, ir))
-        continue;
+  QByteArray arr(strResponse.c_str(), strResponse.size());
+  QJsonDocument doc = QJsonDocument::fromJson(arr);
+  if (doc.isNull() || doc.isEmpty() || !doc.isArray()) {
+    //!todo log at least
+    return;
+  }
 
-      ir.ix = lstResources.size();
-      lstResources.push_back(ir);
-    } //for it : jsonArr
-    m_lstResources = lstResources;
-  }); //finished, connect.
+  QJsonArray jsonArr = doc.array();
+  std::vector<InternetResource> lstResources;
+  for (auto it : jsonArr) {
+    if (!it.isObject())
+      continue;
+
+    QJsonObject obj = it.toObject();
+    InternetResource ir;
+    if (!parseReply(obj, ir))
+      continue;
+
+    ir.ix = lstResources.size();
+    lstResources.push_back(ir);
+  } //for it : jsonArr
+
+  m_lstResources = lstResources;
 }
 ///////////////////////////////////////////////////////
 
@@ -128,43 +123,54 @@ ResourceProviderNetworkServicePolicy::downloadImgToTemp(const QString &imgUrlStr
   if (!lstTempLocations.empty())
     tmpPathDir = lstTempLocations[0];
 
-  success = true;
   QString fileName = imgUrlStr;
   fileName.replace("\\", "_").replace("/", "_").replace(":", "_");
   fileName = QString("img_%1.pix").arg(fileName);
   QString fullFilePath = tmpPathDir + QDir::separator() + fileName;
 
-  success = true;
   if (QFile::exists(fullFilePath)) {
+    success = true;
     return fullFilePath;
   }
 
-  QUrl imgUrl(imgUrlStr);
-  QNetworkRequest request(imgUrl);
-  request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-  request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
-  QNetworkReply *reply = getReply(m_network_manager, request);
+  CURL *hCurl;
+  std::FILE *fImg;
+  /* init the curl session */
+  hCurl = curl_easy_init();
+  if (!hCurl) {
+    //!todo log
+    success = false;
+    return "";
+  }
+  Defer curlCleanup(std::bind([&hCurl](){curl_easy_cleanup(hCurl);}));
 
-  QObject::connect(reply, &QNetworkReply::finished, [reply, fullFilePath]() {
-    if (reply == nullptr)
-      return;
+  fImg = std::fopen(fullFilePath.toStdString().c_str(), "wb");
+  if (!fImg) {
+    //!todo log
+    success = false;
+    return "";
+  }
+  Defer imgClose(std::bind([&fImg](){std::fclose(fImg);}));
 
-    int http_code, err_code, network_error;
-    preHandleReply(reply, http_code, err_code, network_error);
+  curl_easy_setopt(hCurl, CURLOPT_URL, imgUrlStr.toStdString().c_str());
+  curl_easy_setopt(hCurl, CURLOPT_NOPROGRESS, 1L);
+  curl_easy_setopt(hCurl, CURLOPT_USERAGENT, "curl/7.42.0");
+  curl_easy_setopt(hCurl, CURLOPT_MAXREDIRS, 50L);
+  curl_easy_setopt(hCurl, CURLOPT_FOLLOWLOCATION, 1L);
+  curl_easy_setopt(hCurl, CURLOPT_TCP_KEEPALIVE, 1L);
 
-    if (err_code || network_error)
-      return; //!todo log!
+  curl_easy_setopt(hCurl, CURLOPT_WRITEFUNCTION, downloadImgWriteFunc);
+  curl_easy_setopt(hCurl, CURLOPT_WRITEDATA, fImg);
 
-    QByteArray arr = reply->readAll();
-    QFile f(fullFilePath);
-    if (!f.open(QFile::WriteOnly)) {
-      //todo log
-      return;
-    }
-    Defer fcl(std::bind([&f](){f.close();}));
-    f.write(arr);
-  });
+  long rc;
+  curl_easy_getinfo(hCurl, CURLINFO_RESPONSE_CODE, &rc);
+  curl_easy_perform(hCurl);
 
+  if (rc != CURLE_OK) {
+    success = false;
+    return "";
+  }
+  success = true;
   return fullFilePath;
 }
 ///////////////////////////////////////////////////////
@@ -197,19 +203,8 @@ ResourceProviderNetworkServicePolicy::parseReply(const QJsonObject &obj,
 }
 ///////////////////////////////////////////////////////
 
-ResourceProviderNetworkServicePolicy::ResourceProviderNetworkServicePolicy() :
-  m_network_manager(nullptr) {
-  //!todo init from config etc
-  m_network_manager = new QNetworkAccessManager;
-}
-
-ResourceProviderNetworkServicePolicy::~ResourceProviderNetworkServicePolicy() {
-  if (m_network_manager)
-    delete m_network_manager;
-}
-///////////////////////////////////////////////////////
-
-std::vector<InternetResource> ResourceProviderNetworkServicePolicy::updateListOfResources() {
+std::vector<InternetResource>
+ResourceProviderNetworkServicePolicy::updateListOfResources() {
   Instance().updateListOfResourcesImpl();
   return Instance().m_lstResources; //copy of vector
 }

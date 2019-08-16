@@ -10,7 +10,7 @@
 #include <mutex>
 #include "ResourceProvider.h"
 
-class CurlWorker : public QObject {
+class ResourceChecker : public QObject {
   Q_OBJECT
 
 private:
@@ -18,8 +18,8 @@ private:
   std::mutex m_mut;
   std::vector<InternetResource> m_lstResources;
 
-  CurlWorker(const CurlWorker&); //prohibited
-  CurlWorker& operator=(const CurlWorker&); //prohibited
+  ResourceChecker(const ResourceChecker&); //prohibited
+  ResourceChecker& operator=(const ResourceChecker&); //prohibited
 
   int multiRequest(const std::vector<InternetResource> &lst);
   CURL *addInternetResourceToCURLM(const InternetResource &ir);
@@ -28,8 +28,8 @@ private:
   void run();
 
 public:
-  CurlWorker() = default;
-  virtual ~CurlWorker() = default;
+  ResourceChecker() = default;
+  virtual ~ResourceChecker() = default;
   void stop();
   void updateResourceList(const std::vector<InternetResource> &lst);
 

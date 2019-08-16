@@ -3,7 +3,7 @@
 
 #include <QAbstractTableModel>
 #include <QFont>
-#include "CurlWorker.h"
+#include "ResourceChecker.h"
 
 class ConnectionInfoModel : public QAbstractTableModel {
   Q_OBJECT

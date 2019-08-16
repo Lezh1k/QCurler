@@ -12,20 +12,25 @@ class QJsonObject;
 
 class ResourceProviderNetworkServicePolicy {
 private:
+  QString m_url_management;
   std::vector<InternetResource> m_lstResources;
-  QNetworkAccessManager *m_network_manager;
   void updateListOfResourcesImpl();
   QString downloadImgToTemp(const QString &imgUrl, bool &success);
 
   //static methods
   static bool parseReply(const QJsonObject &obj, InternetResource &ir);
   static ResourceProviderNetworkServicePolicy& Instance(void);
-  static QNetworkReply* getReply(QNetworkAccessManager* nam,
-                                 QNetworkRequest& req);
-  static void preHandleReply(const QNetworkReply *reply,
-                             int &http_code,
-                             int &err_code,
-                             int &network_error);
+
+  static size_t updateResWriteFunc(void *ptr,
+                              size_t size,
+                              size_t nmemb,
+                              std::string* data);
+
+  static size_t downloadImgWriteFunc(void *ptr,
+                                     size_t size,
+                                     size_t nmemb,
+                                     void *stream);
+
 public:
   ResourceProviderNetworkServicePolicy();
   ResourceProviderNetworkServicePolicy(ResourceProviderNetworkServicePolicy const &) = delete;

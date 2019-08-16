@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "CurlWorker.h"
+#include "ResourceChecker.h"
 #include "ResourceProvider.h"
 
 #include "ResourceProviderHardcodePolicy.h"
@@ -20,7 +20,7 @@ class MainWindow : public QMainWindow
 private:
   Ui::MainWindow *ui;
 
-  CurlWorker *m_cw;
+  ResourceChecker *m_cw;
   ConnectionInfoModel *m_model;
 //  ResourceProvider<ResourceProviderHardcodePolicy> m_resourcesProv;
   ResourceProvider<ResourceProviderNetworkServicePolicy> m_resourcesProv;

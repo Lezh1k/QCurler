@@ -2,7 +2,7 @@
 #include <QColor>
 
 #include "ConnectionInfoModel.h"
-#include "CurlWorker.h"
+#include "ResourceChecker.h"
 #include "Commons.h"
 
 static std::vector<QString> lst_headers = {

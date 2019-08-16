@@ -1,4 +1,4 @@
-#include "CurlWorker.h"
+#include "ResourceChecker.h"
 #include <QThread>
 #include <assert.h>
 #include "Commons.h"
@@ -13,7 +13,7 @@ static size_t write_cb(void *ptr,
 }
 ///////////////////////////////////////////////////////
 
-int CurlWorker::multiRequest(const std::vector<InternetResource>& lst_resources) {
+int ResourceChecker::multiRequest(const std::vector<InternetResource>& lst_resources) {
   CURLM *cm = nullptr;
   CURLMsg *msg = nullptr;
   int32_t qmsg;
@@ -102,7 +102,7 @@ int CurlWorker::multiRequest(const std::vector<InternetResource>& lst_resources)
 }
 ///////////////////////////////////////////////////////
 
-CURL* CurlWorker::addInternetResourceToCURLM(const InternetResource &ir) {
+CURL* ResourceChecker::addInternetResourceToCURLM(const InternetResource &ir) {
   CURL* hCurl = curl_easy_init();
   if (!hCurl) {
     fprintf(stderr, "curl_easy_init() failed");
@@ -131,7 +131,7 @@ CURL* CurlWorker::addInternetResourceToCURLM(const InternetResource &ir) {
 }
 ///////////////////////////////////////////////////////////
 
-void CurlWorker::emit_ir_info(const CURLMsg *msg) {
+void ResourceChecker::emit_ir_info(const CURLMsg *msg) {
   CURL *hCurl;
   CURLcode res;
   InternetResourceInfo info;
@@ -165,7 +165,7 @@ void CurlWorker::emit_ir_info(const CURLMsg *msg) {
 }
 ///////////////////////////////////////////////////////
 
-void CurlWorker::run() {
+void ResourceChecker::run() {
   while (m_isRunning) {
     QThread::currentThread()->msleep(200UL);
     MutexLocker lock(m_mut);
@@ -175,17 +175,17 @@ void CurlWorker::run() {
 }
 ///////////////////////////////////////////////////////
 
-void CurlWorker::start() {  
+void ResourceChecker::start() {
   m_isRunning = true;
   run();
 }
 ///////////////////////////////////////////////////////
 
-void CurlWorker::stop() {
+void ResourceChecker::stop() {
   m_isRunning = false;
 }
 
-void CurlWorker::updateResourceList(const std::vector<InternetResource> &lst) {
+void ResourceChecker::updateResourceList(const std::vector<InternetResource> &lst) {
   MutexLocker lock(m_mut);
   m_lstResources = lst; //copy
 }
