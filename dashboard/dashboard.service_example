@@ -1,0 +1,10 @@
+[Unit]
+Description=Kumtor dashboard service
+After=mysql.service
+
+[Service]
+ExecStart=<path_to_script>
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
