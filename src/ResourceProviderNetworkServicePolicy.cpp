@@ -11,7 +11,7 @@
 #include "ResourceProviderNetworkServicePolicy.h"
 
 ResourceProviderNetworkServicePolicy::ResourceProviderNetworkServicePolicy() :
-  m_url_management("http://192.168.20.128:8000") {
+  m_url_management("http://127.0.0.1:8080") {
 
   QString appDir = qApp->applicationDirPath();
   static const QString urlFile = "url.cfg";
@@ -60,7 +60,7 @@ ResourceProviderNetworkServicePolicy::downloadImgWriteFunc(void *ptr,
 ///////////////////////////////////////////////////////
 
 void
-ResourceProviderNetworkServicePolicy::updateListOfResourcesImpl() {
+ResourceProviderNetworkServicePolicy::updateListOfResourcesNetworkImpl() {
   const QString urlStr(QString("%1/api/resources").arg(m_url_management));
   CURL *hCurl = curl_easy_init();
   if (!hCurl) {
@@ -84,7 +84,6 @@ ResourceProviderNetworkServicePolicy::updateListOfResourcesImpl() {
   curl_easy_perform(hCurl);
 
   if (rc != CURLE_OK) {
-    //    qDebug() << rc;
     return;
   }
 
@@ -110,6 +109,41 @@ ResourceProviderNetworkServicePolicy::updateListOfResourcesImpl() {
     lstResources.push_back(ir);
   } //for it : jsonArr
 
+  m_lstResources = lstResources;
+}
+///////////////////////////////////////////////////////
+
+void
+ResourceProviderNetworkServicePolicy::updateListOfResourcesLocalImpl() {
+  QString appDir = qApp->applicationDirPath();
+  static const QString urlFile = "res.cfg";
+  QString cfgPath = appDir + QDir::separator() + urlFile;
+  QFile cfgF(cfgPath);
+
+  if (!cfgF.open(QFile::ReadOnly))
+    return;
+  QByteArray data = cfgF.readAll();
+
+  QJsonDocument doc = QJsonDocument::fromJson(data);
+  if (doc.isNull() || doc.isEmpty() || !doc.isArray()) {
+    //!todo log at least
+    return;
+  }
+
+  QJsonArray jsonArr = doc.array();
+  std::vector<InternetResource> lstResources;
+  for (auto it : jsonArr) {
+    if (!it.isObject())
+      continue;
+
+    QJsonObject obj = it.toObject();
+    InternetResource ir;
+    if (!parseLocal(obj, ir))
+      continue;
+
+    ir.ix = lstResources.size();
+    lstResources.push_back(ir);
+  } //for it : jsonArr
   m_lstResources = lstResources;
 }
 ///////////////////////////////////////////////////////
@@ -201,11 +235,38 @@ ResourceProviderNetworkServicePolicy::parseReply(const QJsonObject &obj,
   } while (0);
   return true;
 }
+
+bool
+ResourceProviderNetworkServicePolicy::parseLocal(const QJsonObject &obj,
+                                                 InternetResource &ir) {
+  if (obj.find("url") == obj.end())
+    return false;
+  //if resource is not active just skip it
+  if (obj.find("active") != obj.end()) {
+    if (!obj["active"].toBool())
+      return false;
+  }
+  ir.url = obj["url"].toString();
+  if (obj.find("skip_hostname_verification") != obj.end())
+    ir.skip_hostname_verification = obj["skip_hostname_verification"].toInt(0) != 0;
+  if (obj.find("skip_peer_verification") != obj.end())
+    ir.skip_peer_verification = obj["skip_peer_verification"].toInt(0) != 0;
+  if (obj.find("timeout") != obj.end())
+    ir.timeout_ms = static_cast<uint32_t>(obj["timeout"].toInt(3000));
+  if (obj.find("title") != obj.end())
+    ir.name = obj["title"].toString();
+  if (obj.find("picture") != obj.end())
+    ir.img_path = obj["picture"].toString();
+  return true;
+}
 ///////////////////////////////////////////////////////
 
 std::vector<InternetResource>
 ResourceProviderNetworkServicePolicy::updateListOfResources() {
-  Instance().updateListOfResourcesImpl();
+  Instance().updateListOfResourcesNetworkImpl();
+  if (Instance().m_lstResources.empty()) {
+    Instance().updateListOfResourcesLocalImpl();
+  }
   return Instance().m_lstResources; //copy of vector
 }
 ///////////////////////////////////////////////////////

@@ -4,21 +4,18 @@
 #include <vector>
 #include "InternetResource.h"
 
-class QNetworkAccessManager;
-class QNetwokReply;
-class QNetworkRequest;
-class QNetworkReply;
 class QJsonObject;
-
 class ResourceProviderNetworkServicePolicy {
 private:
   QString m_url_management;
   std::vector<InternetResource> m_lstResources;
-  void updateListOfResourcesImpl();
+  void updateListOfResourcesNetworkImpl();
+  void updateListOfResourcesLocalImpl();
   QString downloadImgToTemp(const QString &imgUrl, bool &success);
 
   //static methods
   static bool parseReply(const QJsonObject &obj, InternetResource &ir);
+  static bool parseLocal(const QJsonObject &obj, InternetResource &ir);
   static ResourceProviderNetworkServicePolicy& Instance(void);
 
   static size_t updateResWriteFunc(void *ptr,
@@ -31,10 +28,11 @@ private:
                                      size_t nmemb,
                                      void *stream);
 
-public:
-  ResourceProviderNetworkServicePolicy();
   ResourceProviderNetworkServicePolicy(ResourceProviderNetworkServicePolicy const &) = delete;
   void operator =(ResourceProviderNetworkServicePolicy const &) = delete;
+
+public:
+  ResourceProviderNetworkServicePolicy();
 
 protected:
   ~ResourceProviderNetworkServicePolicy(); //because we don't want vptr here.
